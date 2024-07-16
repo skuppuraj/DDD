@@ -169,7 +169,9 @@ Let's model the main components of the DDD-based search engine in PHP. We'll cre
 
 ### 1. **Entities**
 
-#### User Entity
+let's add some essential functions to each entity. These functions will include getters, setters, and domain-specific methods to manage the state and behavior of the entities.
+
+### User Entity
 ```php
 class User
 {
@@ -190,11 +192,67 @@ class User
         $this->updatedAt = new DateTime();
     }
 
-    // Getters and setters...
+    // Getters
+    public function getUserId()
+    {
+        return $this->userId;
+    }
+
+    public function getUsername()
+    {
+        return $this->username;
+    }
+
+    public function getEmail()
+    {
+        return $this->email;
+    }
+
+    public function getProfileDetails()
+    {
+        return $this->profileDetails;
+    }
+
+    public function getCreatedAt()
+    {
+        return $this->createdAt;
+    }
+
+    public function getUpdatedAt()
+    {
+        return $this->updatedAt;
+    }
+
+    // Setters
+    public function setUsername($username)
+    {
+        $this->username = $username;
+        $this->updatedAt = new DateTime();
+    }
+
+    public function setEmail($email)
+    {
+        $this->email = $email;
+        $this->updatedAt = new DateTime();
+    }
+
+    public function setProfileDetails(ProfileDetails $profileDetails)
+    {
+        $this->profileDetails = $profileDetails;
+        $this->updatedAt = new DateTime();
+    }
+
+    // Other methods
+    public function updateProfile($username, $email, ProfileDetails $profileDetails)
+    {
+        $this->setUsername($username);
+        $this->setEmail($email);
+        $this->setProfileDetails($profileDetails);
+    }
 }
 ```
 
-#### Post Entity
+### Post Entity
 ```php
 class Post
 {
@@ -217,9 +275,319 @@ class Post
         $this->updatedAt = new DateTime();
     }
 
-    // Getters and setters...
+    // Getters
+    public function getPostId()
+    {
+        return $this->postId;
+    }
+
+    public function getTitle()
+    {
+        return $this->title;
+    }
+
+    public function getContent()
+    {
+        return $this->content;
+    }
+
+    public function getAuthor()
+    {
+        return $this->author;
+    }
+
+    public function getTags()
+    {
+        return $this->tags;
+    }
+
+    public function getCreatedAt()
+    {
+        return $this->createdAt;
+    }
+
+    public function getUpdatedAt()
+    {
+        return $this->updatedAt;
+    }
+
+    // Setters
+    public function setTitle($title)
+    {
+        $this->title = $title;
+        $this->updatedAt = new DateTime();
+    }
+
+    public function setContent($content)
+    {
+        $this->content = $content;
+        $this->updatedAt = new DateTime();
+    }
+
+    public function setTags(array $tags)
+    {
+        $this->tags = $tags;
+        $this->updatedAt = new DateTime();
+    }
+
+    // Other methods
+    public function updatePost($title, $content, array $tags)
+    {
+        $this->setTitle($title);
+        $this->setContent($content);
+        $this->setTags($tags);
+    }
+
+    public function addTag(Tag $tag)
+    {
+        $this->tags[] = $tag;
+        $this->updatedAt = new DateTime();
+    }
+
+    public function removeTag(Tag $tag)
+    {
+        $this->tags = array_filter($this->tags, function($t) use ($tag) {
+            return $t->getName() !== $tag->getName();
+        });
+        $this->updatedAt = new DateTime();
+    }
 }
 ```
+
+### Comment Entity
+```php
+class Comment
+{
+    private $commentId;
+    private $content;
+    private $author;
+    private $post;
+    private $createdAt;
+    private $updatedAt;
+
+    public function __construct($commentId, $content, User $author, Post $post)
+    {
+        $this->commentId = $commentId;
+        $this->content = $content;
+        $this->author = $author;
+        $this->post = $post;
+        $this->createdAt = new DateTime();
+        $this->updatedAt = new DateTime();
+    }
+
+    // Getters
+    public function getCommentId()
+    {
+        return $this->commentId;
+    }
+
+    public function getContent()
+    {
+        return $this->content;
+    }
+
+    public function getAuthor()
+    {
+        return $this->author;
+    }
+
+    public function getPost()
+    {
+        return $this->post;
+    }
+
+    public function getCreatedAt()
+    {
+        return $this->createdAt;
+    }
+
+    public function getUpdatedAt()
+    {
+        return $this->updatedAt;
+    }
+
+    // Setters
+    public function setContent($content)
+    {
+        $this->content = $content;
+        $this->updatedAt = new DateTime();
+    }
+
+    // Other methods
+    public function updateContent($content)
+    {
+        $this->setContent($content);
+    }
+}
+```
+
+### Product Entity
+```php
+class Product
+{
+    private $productId;
+    private $name;
+    private $description;
+    private $price;
+    private $createdAt;
+    private $updatedAt;
+
+    public function __construct($productId, $name, $description, $price)
+    {
+        $this->productId = $productId;
+        $this->name = $name;
+        $this->description = $description;
+        $this->price = $price;
+        $this->createdAt = new DateTime();
+        $this->updatedAt = new DateTime();
+    }
+
+    // Getters
+    public function getProductId()
+    {
+        return $this->productId;
+    }
+
+    public function getName()
+    {
+        return $this->name;
+    }
+
+    public function getDescription()
+    {
+        return $this->description;
+    }
+
+    public function getPrice()
+    {
+        return $this->price;
+    }
+
+    public function getCreatedAt()
+    {
+        return $this->createdAt;
+    }
+
+    public function getUpdatedAt()
+    {
+        return $this->updatedAt;
+    }
+
+    // Setters
+    public function setName($name)
+    {
+        $this->name = $name;
+        $this->updatedAt = new DateTime();
+    }
+
+    public function setDescription($description)
+    {
+        $this->description = $description;
+        $this->updatedAt = new DateTime();
+    }
+
+    public function setPrice($price)
+    {
+        $this->price = $price;
+        $this->updatedAt = new DateTime();
+    }
+
+    // Other methods
+    public function updateProduct($name, $description, $price)
+    {
+        $this->setName($name);
+        $this->setDescription($description);
+        $this->setPrice($price);
+    }
+}
+```
+
+### Order Entity
+```php
+class Order
+{
+    private $orderId;
+    private $user;
+    private $productList;
+    private $totalAmount;
+    private $orderDate;
+    private $status;
+
+    public function __construct($orderId, User $user, array $productList, $totalAmount, $status)
+    {
+        $this->orderId = $orderId;
+        $this->user = $user;
+        $this->productList = $productList;
+        $this->totalAmount = $totalAmount;
+        $this->orderDate = new DateTime();
+        $this->status = $status;
+    }
+
+    // Getters
+    public function getOrderId()
+    {
+        return $this->orderId;
+    }
+
+    public function getUser()
+    {
+        return $this->user;
+    }
+
+    public function getProductList()
+    {
+        return $this->productList;
+    }
+
+    public function getTotalAmount()
+    {
+        return $this->totalAmount;
+    }
+
+    public function getOrderDate()
+    {
+        return $this->orderDate;
+    }
+
+    public function getStatus()
+    {
+        return $this->status;
+    }
+
+    // Setters
+    public function setStatus($status)
+    {
+        $this->status = $status;
+    }
+
+    // Other methods
+    public function addProduct(Product $product)
+    {
+        $this->productList[] = $product;
+        $this->totalAmount += $product->getPrice();
+    }
+
+    public function removeProduct(Product $product)
+    {
+        $this->productList = array_filter($this->productList, function($p) use ($product) {
+            return $p->getProductId() !== $product->getProductId();
+        });
+
+
+        $this->totalAmount -= $product->getPrice();
+    }
+
+    public function calculateTotalAmount()
+    {
+        $this->totalAmount = 0;
+        foreach ($this->productList as $product) {
+            $this->totalAmount += $product->getPrice();
+        }
+    }
+}
+```
+
+This implementation adds essential getters, setters, and domain-specific methods to each entity. The methods ensure that the entities can manage their state and behavior in a way that aligns with the principles of DDD.
 
 ### 2. **Value Objects**
 
