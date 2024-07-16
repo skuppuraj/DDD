@@ -916,3 +916,179 @@ echo $response;
 ```
 
 This implementation includes additional functions in value objects, aggregates, services, and repositories. These functions ensure that the entities can manage their state and behavior effectively while adhering to the principles of Domain-Driven Design.
+
+
+Sure, let's create a concrete implementation for the `UserRepository` interface. This implementation will interact with a database using PDO (PHP Data Objects) for simplicity. In a real-world scenario, you might use an ORM like Doctrine or Eloquent, but we'll keep it simple for this example.
+
+### Concrete Implementation of UserRepository
+
+#### UserRepositoryInterface
+```php
+interface UserRepository
+{
+    public function findById($userId);
+    public function findByUsername($username);
+    public function findByEmail($email);
+    public function search($query);
+
+    // Additional methods
+    public function save(User $user);
+    public function delete(User $user);
+}
+```
+
+#### UserRepository Implementation
+```php
+class PDOUserRepository implements UserRepository
+{
+    private $pdo;
+
+    public function __construct(PDO $pdo)
+    {
+        $this->pdo = $pdo;
+    }
+
+    public function findById($userId)
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE user_id = :userId');
+        $stmt->execute(['userId' => $userId]);
+        $row = $stmt->fetch();
+
+        if (!$row) {
+            return null;
+        }
+
+        return $this->mapRowToUser($row);
+    }
+
+    public function findByUsername($username)
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE username = :username');
+        $stmt->execute(['username' => $username]);
+        $row = $stmt->fetch();
+
+        if (!$row) {
+            return null;
+        }
+
+        return $this->mapRowToUser($row);
+    }
+
+    public function findByEmail($email)
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE email = :email');
+        $stmt->execute(['email' => $email]);
+        $row = $stmt->fetch();
+
+        if (!$row) {
+            return null;
+        }
+
+        return $this->mapRowToUser($row);
+    }
+
+    public function search($query)
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE username LIKE :query OR email LIKE :query');
+        $stmt->execute(['query' => '%' . $query . '%']);
+        $rows = $stmt->fetchAll();
+
+        $users = [];
+        foreach ($rows as $row) {
+            $users[] = $this->mapRowToUser($row);
+        }
+
+        return $users;
+    }
+
+    public function save(User $user)
+    {
+        if ($this->findById($user->getUserId())) {
+            $stmt = $this->pdo->prepare('UPDATE users SET username = :username, email = :email, profile_details = :profileDetails, updated_at = :updatedAt WHERE user_id = :userId');
+            $stmt->execute([
+                'userId' => $user->getUserId(),
+                'username' => $user->getUsername(),
+                'email' => $user->getEmail(),
+                'profileDetails' => json_encode([
+                    'fullName' => $user->getProfileDetails()->getFullName(),
+                    'address' => $user->getProfileDetails()->getAddress(),
+                    'phoneNumber' => $user->getProfileDetails()->getPhoneNumber()
+                ]),
+                'updatedAt' => $user->getUpdatedAt()->format('Y-m-d H:i:s')
+            ]);
+        } else {
+            $stmt = $this->pdo->prepare('INSERT INTO users (user_id, username, email, profile_details, created_at, updated_at) VALUES (:userId, :username, :email, :profileDetails, :createdAt, :updatedAt)');
+            $stmt->execute([
+                'userId' => $user->getUserId(),
+                'username' => $user->getUsername(),
+                'email' => $user->getEmail(),
+                'profileDetails' => json_encode([
+                    'fullName' => $user->getProfileDetails()->getFullName(),
+                    'address' => $user->getProfileDetails()->getAddress(),
+                    'phoneNumber' => $user->getProfileDetails()->getPhoneNumber()
+                ]),
+                'createdAt' => $user->getCreatedAt()->format('Y-m-d H:i:s'),
+                'updatedAt' => $user->getUpdatedAt()->format('Y-m-d H:i:s')
+            ]);
+        }
+    }
+
+    public function delete(User $user)
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM users WHERE user_id = :userId');
+        $stmt->execute(['userId' => $user->getUserId()]);
+    }
+
+    private function mapRowToUser($row)
+    {
+        $profileDetails = new ProfileDetails(
+            $row['profile_details']['fullName'],
+            $row['profile_details']['address'],
+            $row['profile_details']['phoneNumber']
+        );
+
+        return new User(
+            $row['user_id'],
+            $row['username'],
+            $row['email'],
+            $profileDetails
+        );
+    }
+}
+```
+
+### Setup PDO Connection and Use Repository
+
+```php
+// PDO setup (assuming MySQL for this example)
+$dsn = 'mysql:host=localhost;dbname=your_database';
+$username = 'your_username';
+$password = 'your_password';
+$options = [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+];
+
+$pdo = new PDO($dsn, $username, $password, $options);
+
+// Instantiate the repository
+$userRepository = new PDOUserRepository($pdo);
+
+// Example usage
+$newUser = new User(1, 'john_doe', 'john@example.com', new ProfileDetails('John Doe', '123 Main St', '555-555-5555'));
+$userRepository->save(newUser);
+
+$foundUser = $userRepository->findById(1);
+if ($foundUser) {
+    echo 'User found: ' . $foundUser->getUsername();
+}
+
+$searchResults = $userRepository->search('john');
+foreach ($searchResults as $user) {
+    echo 'Found user: ' . $user->getUsername();
+}
+
+$userRepository->delete($newUser);
+```
+
+This concrete implementation of `UserRepository` using PDO provides a basic foundation for interacting with a database. It includes methods to find users by different criteria, save (create/update) users, delete users, and search for users. The `mapRowToUser` method converts database rows into `User` entities, including nested `ProfileDetails` value objects.
